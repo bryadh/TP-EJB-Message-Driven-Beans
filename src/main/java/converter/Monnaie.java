@@ -13,7 +13,7 @@ public class Monnaie implements Serializable {
     private List<String> nomsPays;
     private String nomCompletMonnaie;
     private String codeMonnaie;
-    private float tauxDeChange;
+    private double tauxDeChange;
 
     public List<String> getNomsPays() {
         return nomsPays;
@@ -39,11 +39,11 @@ public class Monnaie implements Serializable {
         this.codeMonnaie = codeMonnaie;
     }
 
-    public float getTauxDeChange() {
+    public double getTauxDeChange() {
         return tauxDeChange;
     }
 
-    public void setTauxDeChange(float tauxDeChange) {
+    public void setTauxDeChange(double tauxDeChange) {
         this.tauxDeChange = tauxDeChange;
     }
 }

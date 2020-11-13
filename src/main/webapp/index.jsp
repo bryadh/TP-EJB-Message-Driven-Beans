@@ -14,6 +14,9 @@
     <!-- Imports  -->
     <%@page import="java.util.*" %>
     <%@page import="converter.ConverterBean" %>
+    <%@ page import="javax.naming.Context" %>
+    <%@ page import="javax.naming.InitialContext" %>
+    <%@ page import="javax.jms.*" %>
 
     <!-- Injection de dependance  -->
     <jsp:useBean id="beanConv" class="converter.ConverterBean"/>
@@ -64,13 +67,41 @@
             String email = request.getParameter("mail");
             if(email != null && email.length() != 0){
 
+                // Recuperer le context initial dans le serveur de noms JNDI
+                Context jndiContext = new InitialContext();
+
+                // Obtenir une instance de la fabrique de connextions
+                javax.jms.ConnectionFactory connectionFactory =
+                        (QueueConnectionFactory)jndiContext.lookup("/ConnectionFactory");
+
+                // Creer une connexion
+                Connection connection = connectionFactory.createConnection();
+
+                // Creer une session sans transaction et avec des accuses de reception
+                Session sessionQ =
+                        connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+                // Creer un message de type text utilisant l'objet session
+                TextMessage message = sessionQ.createTextMessage();
+
                 // Demander au MDB de déclancher la demande de conversion
                 double amount  = Double.parseDouble(request.getParameter("montant"));
                 String currency = request.getParameter("monnaie");
-                ConverterBean cb = new ConverterBean();
                 double result = cb.euroToOtherCurrency(amount, currency);
                 out.println("<h4>Le montant converti en "+ currency +" est: "+ result +"</h4>");
 
+                // Mettre le text necessaire dans le message
+                message.setText(amount+"#"+email);
+
+                // Obtenir une reference vers une instance de la file de message
+                javax.jms.Queue queue =
+                        (javax.jms.Queue) jndiContext.lookup("queue/MailContent");
+
+                // Creer un object de type producteur de message dans la file
+                MessageProducer messageProducer = sessionQ.createProducer(queue);
+
+                // Envoyer le message
+                messageProducer.send(message);
 
             }
 
